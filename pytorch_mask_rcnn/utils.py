@@ -36,7 +36,8 @@ class TextArea:
         txt = str(self)
         values = re.findall(r"(\d{3})\n", txt)
         if len(values) > 0:
-            values = [int(v) / 10 for v in values]
+            # values = [int(v) / 10 for v in values]
+            values = [float(v) / 1000 for v in values]
             result = {"bbox AP": values[0], "mask AP": values[12]}
             
         return result

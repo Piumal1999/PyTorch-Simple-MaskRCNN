@@ -3,6 +3,7 @@ import glob
 import os
 import re
 import time
+import wandb
 
 import torch
 
@@ -36,6 +37,16 @@ def main(args):
         params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
     lr_lambda = lambda x: 0.1 ** bisect.bisect(args.lr_steps, x)
     
+    run = wandb.init(
+    # Set the project where this run will be logged
+    project="maskrcnn-bone-level-segmentation",
+    # Track hyperparameters and run metadata
+    config={
+        "learning_rate": args.lr,
+        "epochs": args.epochs,
+    },
+    )
+
     start_epoch = 0
     
     # find all checkpoints, and load the latest checkpoint
@@ -71,7 +82,10 @@ def main(args):
         trained_epoch = epoch + 1
         print("training: {:.1f} s, evaluation: {:.1f} s".format(A, B))
         pmr.collect_gpu_info("maskrcnn", [1 / iter_train, 1 / iter_eval])
-        print(eval_output.get_AP())
+
+        results = eval_output.get_AP()
+        print(results)
+        wandb.log({"bbox AP": results["bbox AP"], "mask AP": results["mask AP"]})
 
         pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path, eval_info=str(eval_output))
 
