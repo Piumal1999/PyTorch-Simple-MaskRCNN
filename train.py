@@ -76,6 +76,7 @@ def main(args):
         A = time.time() - A
         
         B = time.time()
+        train_output, __iter_train = pmr.evaluate(model, dataset_train, device, args)
         eval_output, iter_eval = pmr.evaluate(model, d_test, device, args)
         B = time.time() - B
 
@@ -83,9 +84,19 @@ def main(args):
         print("training: {:.1f} s, evaluation: {:.1f} s".format(A, B))
         pmr.collect_gpu_info("maskrcnn", [1 / iter_train, 1 / iter_eval])
 
+        results_train = train_output.get_AP()
+        print(results_train)
+
         results = eval_output.get_AP()
         print(results)
-        wandb.log({"bbox AP": results["bbox AP"], "mask AP": results["mask AP"]})
+
+        print(train_output)
+        print(eval_output)
+
+        wandb.log({
+            "train": {"bbox AP": results_train["bbox AP"], "mask AP": results_train["mask AP"]},
+            "validation": {"bbox AP": results["bbox AP"], "mask AP": results["mask AP"]}
+            })
 
         pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path, eval_info=str(eval_output))
 
