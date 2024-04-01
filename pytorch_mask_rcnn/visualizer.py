@@ -250,7 +250,8 @@ class Visualizer:
 
             if masks is not None:
                 for segment in masks[i].polygons:
-                    self.draw_polygon(segment.reshape(-1, 2), color, alpha=alpha)
+                    # self.draw_polygon(segment.reshape(-1, 2), color, alpha=alpha)
+                    self.draw_best_fit_line(segment.reshape(-1, 2), color=color, alpha=alpha)
 
             if labels is not None:
                 # first get a box
@@ -363,6 +364,28 @@ class Visualizer:
         )
         self.output.ax.add_patch(polygon)
         return self.output
+    
+    def draw_best_fit_line(self, segment, degree=3, color='blue', edge_color=None, alpha=0.5):
+        if edge_color is None:
+            # make edge color darker than the line color
+            if alpha > 0.8:
+                edge_color = self._change_color_brightness(color, brightness_factor=-0.7)
+            else:
+                edge_color = color
+        edge_color = mplc.to_rgb(edge_color) + (1,)
+
+        x = segment[:, 0]
+        y = segment[:, 1]
+
+        coeffs = np.polyfit(x, y, degree)
+        poly = np.poly1d(coeffs)
+        x_fit = np.linspace(min(x), max(x), 100)
+        y_fit = poly(x_fit)
+
+        line = mpl.lines.Line2D(x_fit, y_fit, color=color, alpha=alpha, linewidth=max(self._default_font_size // 15 * self.output.scale, 1))
+        self.output.ax.add_line(line)
+        return self.output
+
     
     def show(self, title=None):
         H, W = self.img.shape[:2]
