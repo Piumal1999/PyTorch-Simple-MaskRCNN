@@ -33,8 +33,20 @@ def main(args):
     model = pmr.maskrcnn_resnet50(True, num_classes).to(device)
     
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(
-        params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+
+    optimizer = None
+    if args.optimizer == "adam":
+        optimizer = torch.optim.Adam(
+            params,
+            lr=args.lr,
+            betas=(0.9, 0.999),  # You need to define these parameters
+            eps=1e-8,  # You need to define this parameter
+            weight_decay=args.weight_decay
+        )
+    else:
+        optimizer = torch.optim.SGD(
+            params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+
     lr_lambda = lambda x: 0.1 ** bisect.bisect(args.lr_steps, x)
     
     run = wandb.init(
@@ -44,6 +56,7 @@ def main(args):
     config={
         "learning_rate": args.lr,
         "epochs": args.epochs,
+        "optimizer": args.optimizer,
     },
     )
 
@@ -135,6 +148,7 @@ if __name__ == "__main__":
     parser.add_argument("--epochs", type=int, default=3)
     parser.add_argument("--iters", type=int, default=10, help="max iters per epoch, -1 denotes auto")
     parser.add_argument("--print-freq", type=int, default=100, help="frequency of printing losses")
+    parser.add_argument("--optimizer", default="adam", help="adam or sgd")
     args = parser.parse_args()
     
     if args.lr is None:
