@@ -57,6 +57,7 @@ def main(args):
         "learning_rate": args.lr,
         "epochs": args.epochs,
         "optimizer": args.optimizer,
+        "patience": args.patience,
     },
     )
 
@@ -78,7 +79,11 @@ def main(args):
     print("\nalready trained: {} epochs; to {} epochs".format(start_epoch, args.epochs))
     
     # ------------------------------- train ------------------------------------ #
-        
+
+    best_validation_ap = -1
+    epochs_since_improvement = 0
+    patience = args.patience  # Number of epochs to wait for improvement
+
     for epoch in range(start_epoch, args.epochs):
         print("\nepoch: {}".format(epoch + 1))
             
@@ -112,6 +117,18 @@ def main(args):
             })
 
         pmr.save_ckpt(model, optimizer, trained_epoch, args.ckpt_path, eval_info=str(eval_output))
+
+        # Check if validation performance has improved
+        if results["bbox AP"] > best_validation_ap:
+            best_validation_ap = results["bbox AP"]
+            epochs_since_improvement = 0
+        else:
+            epochs_since_improvement += 1
+
+        # Early stopping check
+        if epochs_since_improvement >= patience:
+            print(f"No improvement in validation AP for {patience} epochs. Stopping training.")
+            break
 
         # it will create many checkpoint files during training, so delete some.
         prefix, ext = os.path.splitext(args.ckpt_path)
@@ -149,6 +166,7 @@ if __name__ == "__main__":
     parser.add_argument("--iters", type=int, default=10, help="max iters per epoch, -1 denotes auto")
     parser.add_argument("--print-freq", type=int, default=100, help="frequency of printing losses")
     parser.add_argument("--optimizer", default="adam", help="adam or sgd")
+    parser.add_argument("--patience", type=int, default=10)
     args = parser.parse_args()
     
     if args.lr is None:
