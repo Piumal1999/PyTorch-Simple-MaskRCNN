@@ -11,6 +11,7 @@ import pycocotools.mask as mask_util
 from matplotlib.backends.backend_agg import FigureCanvasAgg
 import os
 import torch
+from torchvision.ops import nms
 
 __all__ = ["ColorMode", "VisImage", "Visualizer", "show"]
 
@@ -207,7 +208,7 @@ class Visualizer:
         return self.output
 
     def overlay_instances(self, boxes=None, labels=None, masks=None, 
-                          assigned_colors=None, alpha=0.5):
+                      assigned_colors=None, alpha=0.5, score_threshold=0.5, iou_threshold=0.5):
         num_instances = 0
         if boxes is not None:
             boxes = np.asarray(boxes.cpu())
@@ -243,7 +244,17 @@ class Visualizer:
             masks = [masks[idx] for idx in sorted_idxs] if masks is not None else None
             assigned_colors = [assigned_colors[idx] for idx in sorted_idxs]
 
-        for i in range(num_instances):
+        # Apply NMS to filter out overlapping boxes
+        if boxes is not None and len(boxes) > 0:
+            scores = np.array(labels)
+            boxes = torch.tensor(boxes, dtype=torch.float32)
+            keep = nms(boxes, scores, iou_threshold)
+            boxes = boxes[keep].cpu().numpy()
+            labels = [labels[k] for k in keep]
+            masks = [masks[k] for k in keep]
+            assigned_colors = [assigned_colors[k] for k in keep]
+
+        for i in range(len(boxes)):
             color = assigned_colors[i]
             if boxes is not None:
                 self.draw_box(boxes[i], edge_color=color)
