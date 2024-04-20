@@ -4,7 +4,8 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import torch
 from torchvision import transforms
-
+from .clahe import Clahe
+# from PIL import Image # uncomment if saving clahe images
 
 class GeneralizedDataset:
     """
@@ -14,11 +15,23 @@ class GeneralizedDataset:
     def __init__(self, max_workers=2, verbose=False):
         self.max_workers = max_workers
         self.verbose = verbose
+        self.clahe = Clahe(clip_limit=3, grid_size=(8, 8))
             
     def __getitem__(self, i):
         img_id = self.ids[i]
         image = self.get_image(img_id)
         image = transforms.ToTensor()(image)
+
+        # Apply Clahe to the image tensor
+        image = self.clahe(image)
+
+        # # Save the CLAHE-enhanced image
+        # save_path = os.path.join('clahe_images', f'{img_id}.jpg')
+        # os.makedirs(os.path.dirname(save_path), exist_ok=True)
+        # clahe_image = image.permute(1, 2, 0).numpy() * 255
+        # clahe_image = clahe_image.astype('uint8')
+        # Image.fromarray(clahe_image).save(save_path)
+
         target = self.get_target(img_id) if self.train else {}
         return image, target   
     
@@ -78,5 +91,3 @@ class GeneralizedDataset:
                 if self.verbose:
                     print(img_id, e)
         return out
-
-                    
