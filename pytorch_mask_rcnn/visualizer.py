@@ -246,8 +246,9 @@ class Visualizer:
 
         # Apply NMS to filter out overlapping boxes
         if boxes is not None and len(boxes) > 0:
-            scores = np.array(labels)
+            scores = np.array([float(label.split()[1][:-1]) / 100 for label in labels])
             boxes = torch.tensor(boxes, dtype=torch.float32)
+            scores = torch.tensor(scores, dtype=torch.float32)
             keep = nms(boxes, scores, iou_threshold)
             boxes = boxes[keep].cpu().numpy()
             labels = [labels[k] for k in keep]
