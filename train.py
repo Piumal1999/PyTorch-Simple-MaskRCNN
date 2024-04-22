@@ -47,7 +47,8 @@ def main(args):
         optimizer = torch.optim.SGD(
             params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    lr_lambda = lambda x: 0.1 ** bisect.bisect(args.lr_steps, x)
+    # lr_lambda = lambda x: 0.1 ** bisect.bisect(args.lr_steps, x)
+    lr_lambda = lambda x: 0.99 ** epoch
     
     run = wandb.init(
     # Set the project where this run will be logged
