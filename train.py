@@ -30,12 +30,7 @@ def main(args):
 
     print(args)
     num_classes = max(d_train.dataset.classes) + 1 # including background class
-    if 'fpn' in args.backbone:
-        backbone_name = re.findall('(.*?)_fpn', args.backbone)[0]
-        model = pmr.maskrcnn_resnet_fpn(pretrained=False, num_classes=num_classes,
-                                        pretrained_backbone=True, backbone_name=backbone_name).to(device)
-    else:
-        model = pmr.maskrcnn_resnet50(False, num_classes, pretrained_backbone=True).to(device)
+    model = pmr.maskrcnn_resnet50(True, num_classes).to(device)
     
     params = [p for p in model.parameters() if p.requires_grad]
 
@@ -160,7 +155,6 @@ if __name__ == "__main__":
     parser.add_argument("--data-dir", default="E:/PyTorch/data/coco2017")
     parser.add_argument("--ckpt-path")
     parser.add_argument("--results")
-    parser.add_argument("--backbone", type=str, default="resnet101_fpn", choices=["resnet50", "resnet50_fpn", "resnet101_fpn"])
     
     parser.add_argument("--seed", type=int, default=3)
     parser.add_argument('--lr-steps', nargs="+", type=int, default=[6, 7])
