@@ -4,6 +4,7 @@ import os
 import re
 import time
 import wandb
+import math
 
 import torch
 
@@ -47,9 +48,20 @@ def main(args):
         optimizer = torch.optim.SGD(
             params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
 
-    # lr_lambda = lambda x: 0.1 ** bisect.bisect(args.lr_steps, x)
-    lr_lambda = lambda x: 0.99 ** epoch
-    
+    # --------------------------------------------- #
+    # Different LR schedulers
+
+    lr_lambda = lambda x: 0.1 ** bisect.bisect(args.lr_steps, x)          # step
+    # lr_lambda = lambda x: 0.99 ** epoch                                   # LRlambda
+
+    # base_lr = 0.00001
+    # max_lr = 1
+    # step_size_up = 5
+    # damping_factor = 0.1 
+    # lr_lambda = lambda iteration: base_lr + (max_lr - base_lr) * (0.5 + 0.5 * math.sin(2 * math.pi * iteration / step_size_up)) # Sine wave
+
+    # lr_lambda = lambda iteration: base_lr + (max_lr - base_lr) * (0.5 + 0.5 * math.sin(2 * math.pi * iteration / step_size_up + math.pi / 2)) * math.exp(-damping_factor * iteration) # Dampening sine wave
+
     run = wandb.init(
     # Set the project where this run will be logged
     project="maskrcnn-bone-level-segmentation",
