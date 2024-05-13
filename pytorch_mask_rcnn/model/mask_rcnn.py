@@ -206,13 +206,16 @@ class ResBackbone(nn.Module):
         body = models.resnet.__dict__[backbone_name](
             pretrained=pretrained, norm_layer=misc.FrozenBatchNorm2d)
         
+        print("hello")
         for name, parameter in body.named_parameters():
+            print(name)
             if 'layer2' not in name and 'layer3' not in name and 'layer4' not in name:
                 parameter.requires_grad_(False)
                 
-        self.body = nn.ModuleDict(d for i, d in enumerate(body.named_children()) if i < 8)
+        self.body = nn.ModuleDict(d for i, d in enumerate(body.named_children()) if i < 23)
         in_channels = 2048
-        self.out_channels = 256
+        # self.out_channels = 256 # for resnet 50 with 8 layers
+        self.out_channels = 512
         
         self.inner_block_module = nn.Conv2d(in_channels, self.out_channels, 1)
         self.layer_block_module = nn.Conv2d(self.out_channels, self.out_channels, 3, 1, 1)
@@ -242,30 +245,32 @@ def maskrcnn_resnet50(pretrained, num_classes, pretrained_backbone=True):
     if pretrained:
         backbone_pretrained = False
         
-    backbone = ResBackbone('resnet50', pretrained_backbone)
+    backbone = ResBackbone('resnet101', True)
     model = MaskRCNN(backbone, num_classes)
     
-    if pretrained:
-        model_urls = {
-            'maskrcnn_resnet50_fpn_coco':
-                'https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth',
-        }
-        model_state_dict = load_url(model_urls['maskrcnn_resnet50_fpn_coco'])
+    # backbone = ResBackbone('resnet50', True)
+    # model = MaskRCNN(backbone, num_classes)
+    # if pretrained:
+    #     model_urls = {
+    #         'maskrcnn_resnet50_fpn_coco':
+    #             'https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth',
+    #     }
+    #     model_state_dict = load_url(model_urls['maskrcnn_resnet50_fpn_coco'])
         
-        pretrained_msd = list(model_state_dict.values())
-        del_list = [i for i in range(265, 271)] + [i for i in range(273, 279)]
-        for i, del_idx in enumerate(del_list):
-            pretrained_msd.pop(del_idx - i)
+    #     pretrained_msd = list(model_state_dict.values())
+    #     del_list = [i for i in range(265, 271)] + [i for i in range(273, 279)]
+    #     for i, del_idx in enumerate(del_list):
+    #         pretrained_msd.pop(del_idx - i)
 
-        msd = model.state_dict()
-        skip_list = [271, 272, 273, 274, 279, 280, 281, 282, 293, 294]
-        if num_classes == 91:
-            skip_list = [271, 272, 273, 274]
-        for i, name in enumerate(msd):
-            if i in skip_list:
-                continue
-            msd[name].copy_(pretrained_msd[i])
+    #     msd = model.state_dict()
+    #     skip_list = [271, 272, 273, 274, 279, 280, 281, 282, 293, 294]
+    #     if num_classes == 91:
+    #         skip_list = [271, 272, 273, 274]
+    #     for i, name in enumerate(msd):
+    #         if i in skip_list:
+    #             continue
+    #         msd[name].copy_(pretrained_msd[i])
             
-        model.load_state_dict(msd)
+    #     model.load_state_dict(msd)
     
     return model
